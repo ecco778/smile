@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Switcher with Overlay</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f4f4f4;
+      font-family: Arial, sans-serif;
+    }
+
+    #imageContainer {
+      position: relative;
+      max-width: 90%;
+      max-height: 90vh;
+    }
+
+    #switchImage,
+    #overlayImage {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      user-select: none;
+    }
+
+    #switchImage {
+      position: relative;
+      z-index: 1;
+      cursor: pointer;
+    }
+
+    #overlayImage {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+      pointer-events: none; /* Allows clicks to pass through */
+    }
+  </style>
+</head>
+<body>
+
+  <div id="imageContainer">
+    <img id="switchImage" src="image1.jpg" alt="Main Image" />
+    <img id="overlayImage" src="overlay.png" alt="Overlay" />
+  </div>
+
+  <script>
+    const img = document.getElementById("switchImage");
+    const defaultImage = "image1.jpg";
+    const clickImage = "image2.jpg";
+    const spacebarImage = "spacebar.jpg";
+
+    let clickTimeoutId = null;
+    let keyTimeoutId = null;
+
+    let inputBuffer = "";
+    let smileActive = false;
+
+    // Preload essential images
+    [defaultImage, clickImage, spacebarImage, "smile.jpg", "overlay.png"].forEach(src => {
+      const preload = new Image();
+      preload.src = src;
+    });
+
+    // Preload a-z images
+    for (let i = 97; i <= 122; i++) {
+      const letter = String.fromCharCode(i);
+      const preload = new Image();
+      preload.src = `${letter}.jpg`;
+    }
+
+    // Click event
+    img.addEventListener("click", () => {
+      if (smileActive) {
+        smileActive = false;
+        inputBuffer = "";
+      }
+
+      if (keyTimeoutId) clearTimeout(keyTimeoutId);
+
+      img.src = clickImage;
+
+      if (clickTimeoutId) clearTimeout(clickTimeoutId);
+      clickTimeoutId = setTimeout(() => {
+        if (!smileActive) {
+          img.src = defaultImage;
+        }
+      }, 1000);
+    });
+
+    // Keydown event
+    document.addEventListener("keydown", (e) => {
+      const key = e.key.toLowerCase();
+
+      // Exit smile mode if user presses letter or space
+      if (smileActive && (/^[a-z]$/.test(key) || key === " ")) {
+        smileActive = false;
+      }
+
+      if (key === " ") {
+        img.src = spacebarImage;
+        inputBuffer = "";
+      } else if (/^[a-z]$/.test(key)) {
+        inputBuffer += key;
+
+        // Keep input buffer to last 5 letters
+        if (inputBuffer.length > 5) {
+          inputBuffer = inputBuffer.slice(-5);
+        }
+
+        if (inputBuffer === "smile") {
+          img.src = "smile.jpg";
+          smileActive = true;
+          inputBuffer = ""; // Clear so user can type smile again later
+          return;
+        } else {
+          img.src = `${key}.jpg`;
+        }
+      } else {
+        return; // Ignore non-letter keys
+      }
+
+      // Only auto-revert if not in smile mode
+      if (!smileActive) {
+        if (keyTimeoutId) clearTimeout(keyTimeoutId);
+        keyTimeoutId = setTimeout(() => {
+          if (!smileActive) {
+            img.src = defaultImage;
+          }
+        }, 1000);
+      }
+    });
+  </script>
+
+</body>
+</html>
